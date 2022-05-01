@@ -69,9 +69,9 @@ impl Location {
     fn from_marker(marker: &Marker) -> Self {
         Location {
             // `col` returned from the `yaml` crate is 0-indexed but all error messages add + 1 to this value
-            column: marker.col() + 1,
-            index: marker.index(),
-            line: marker.line(),
+            column: marker.col + 1,
+            index: marker.index,
+            line: marker.line,
         }
     }
 }
@@ -243,6 +243,9 @@ impl ErrorImpl {
             }
             ErrorImpl::Emit(emitter::EmitError::FmtError(_)) => f.write_str("yaml-rust fmt error"),
             ErrorImpl::Emit(emitter::EmitError::BadHashmapKey) => f.write_str("bad hash map key"),
+            ErrorImpl::Emit(emitter::EmitError::IntFmtWidth) => {
+                f.write_str("bad integer format width")
+            }
             ErrorImpl::Scan(err) => Display::fmt(err, f),
             ErrorImpl::Io(err) => Display::fmt(err, f),
             ErrorImpl::Utf8(err) => Display::fmt(err, f),

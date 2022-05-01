@@ -13,7 +13,7 @@ use std::mem;
 use std::str;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-use yaml_rust::parser::{Event as YamlEvent, MarkedEventReceiver, Parser};
+use yaml_rust::parser::{Event as YamlEvent, EventReceiver, Parser};
 use yaml_rust::scanner::{Marker, TScalarStyle, TokenType};
 
 /// A structure that deserializes YAML into Rust values.
@@ -150,12 +150,12 @@ fn loader(input: Input) -> Result<Loader> {
         Input2::Slice(bytes) => str::from_utf8(bytes).map_err(error::str_utf8)?,
     };
 
-    let mut parser = Parser::new(input.chars());
     let mut loader = Loader {
         events: Vec::new(),
         aliases: BTreeMap::new(),
     };
-    parser.load(&mut loader, true).map_err(error::scanner)?;
+    let mut parser = Parser::new(input.chars(), &mut loader, true);
+    parser.load(true).map_err(error::scanner)?;
     Ok(loader)
 }
 
@@ -457,12 +457,12 @@ pub struct Loader {
     aliases: BTreeMap<usize, usize>,
 }
 
-impl MarkedEventReceiver for Loader {
+impl EventReceiver for Loader {
     fn on_event(&mut self, event: YamlEvent, marker: Marker) {
         let event = match event {
-            YamlEvent::Nothing
-            | YamlEvent::StreamStart
+            YamlEvent::StreamStart
             | YamlEvent::StreamEnd
+            | YamlEvent::Comment(_, _)
             | YamlEvent::DocumentStart
             | YamlEvent::DocumentEnd => return,
 

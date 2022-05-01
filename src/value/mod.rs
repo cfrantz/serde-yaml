@@ -623,9 +623,8 @@ fn yaml_to_value(yaml: Yaml) -> Value {
         Yaml::Alias(_) => panic!("alias unsupported"),
         Yaml::Null => Value::Null,
         Yaml::BadValue => panic!("bad value"),
-        Yaml::BlockScalar(_) => panic!("block scalar unexpected"),
-        Yaml::DocFragment(_, _) => panic!("doc fragment unexpected"),
-        Yaml::Comment(_) => panic!("comment unexpected"),
+        Yaml::Meta(_) => panic!("meta unexpected"),
+        Yaml::Comment(_, _) => panic!("comment unexpected"),
     }
 }
 

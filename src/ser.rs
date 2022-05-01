@@ -6,6 +6,7 @@ use crate::yamlformat::{Format, MemberId, YamlFormat, YamlFormatType};
 use crate::{error, Error, Result};
 use serde::ser;
 use std::{fmt, io, num, str};
+use yaml_rust::yaml::{IntegerFormat, Meta, StringFormat};
 use yaml_rust::{yaml, Yaml, YamlEmitter};
 
 /// A structure for serializing Rust values into YAML.
@@ -539,6 +540,29 @@ impl<'f> SerializerToYaml<'f> {
             comment: None,
         }
     }
+
+    fn serialize_integer(&self, int: Yaml, ty: char, bits: usize) -> Result<Yaml> {
+        let bits = bits as u32;
+        match self.format {
+            None | Some(Format::Decimal) => Ok(int),
+            Some(Format::Binary) => Ok(Yaml::Meta(Meta::Integer(
+                IntegerFormat::Binary(bits, bits),
+                int.into(),
+            ))),
+            Some(Format::Hex) => Ok(Yaml::Meta(Meta::Integer(
+                IntegerFormat::Hex(bits, bits / 4),
+                int.into(),
+            ))),
+            Some(Format::Octal) => Ok(Yaml::Meta(Meta::Integer(
+                IntegerFormat::Octal(bits, (bits + 2) / 3),
+                int.into(),
+            ))),
+            _ => Err(error::format(format!(
+                "Format {:?} not supported for type {}{}",
+                self.format, ty, bits
+            ))),
+        }
+    }
 }
 
 impl<'f> Default for SerializerToYaml<'f> {
@@ -568,143 +592,54 @@ impl<'f> ser::Serializer for SerializerToYaml<'f> {
     }
 
     fn serialize_i8(self, v: i8) -> Result<Yaml> {
-        match self.format {
-            None => Ok(Yaml::Integer(v as i64)),
-            Some(Format::Binary) => Ok(Yaml::Real(format!("{:#010b}", v))),
-            Some(Format::Decimal) => Ok(Yaml::Integer(v as i64)),
-            Some(Format::Hex) => Ok(Yaml::Real(format!("{:#04x}", v))),
-            Some(Format::Octal) => Ok(Yaml::Real(format!("{:#05o}", v))),
-            _ => Err(error::format(format!(
-                "Format {:?} not supported for type i8",
-                self.format
-            ))),
-        }
+        let y = Yaml::Integer(v as i64);
+        self.serialize_integer(y, 'i', std::mem::size_of_val(&v) * 8)
     }
 
     fn serialize_i16(self, v: i16) -> Result<Yaml> {
-        match self.format {
-            None => Ok(Yaml::Integer(v as i64)),
-            Some(Format::Binary) => Ok(Yaml::Real(format!("{:#018b}", v))),
-            Some(Format::Decimal) => Ok(Yaml::Integer(v as i64)),
-            Some(Format::Hex) => Ok(Yaml::Real(format!("{:#06x}", v))),
-            Some(Format::Octal) => Ok(Yaml::Real(format!("{:#08o}", v))),
-            _ => Err(error::format(format!(
-                "Format {:?} not supported for type i16",
-                self.format
-            ))),
-        }
+        let y = Yaml::Integer(v as i64);
+        self.serialize_integer(y, 'i', std::mem::size_of_val(&v) * 8)
     }
 
     fn serialize_i32(self, v: i32) -> Result<Yaml> {
-        match self.format {
-            None => Ok(Yaml::Integer(v as i64)),
-            Some(Format::Binary) => Ok(Yaml::Real(format!("{:#034b}", v))),
-            Some(Format::Decimal) => Ok(Yaml::Integer(v as i64)),
-            Some(Format::Hex) => Ok(Yaml::Real(format!("{:#010x}", v))),
-            Some(Format::Octal) => Ok(Yaml::Real(format!("{:#013o}", v))),
-            _ => Err(error::format(format!(
-                "Format {:?} not supported for type i32",
-                self.format
-            ))),
-        }
+        let y = Yaml::Integer(v as i64);
+        self.serialize_integer(y, 'i', std::mem::size_of_val(&v) * 8)
     }
 
     fn serialize_i64(self, v: i64) -> Result<Yaml> {
-        match self.format {
-            None => Ok(Yaml::Integer(v)),
-            Some(Format::Binary) => Ok(Yaml::Real(format!("{:#066b}", v))),
-            Some(Format::Decimal) => Ok(Yaml::Integer(v)),
-            Some(Format::Hex) => Ok(Yaml::Real(format!("{:#018x}", v))),
-            Some(Format::Octal) => Ok(Yaml::Real(format!("{:#024o}", v))),
-            _ => Err(error::format(format!(
-                "Format {:?} not supported for type i64",
-                self.format
-            ))),
-        }
+        let y = Yaml::Integer(v as i64);
+        self.serialize_integer(y, 'i', std::mem::size_of_val(&v) * 8)
     }
 
     fn serialize_i128(self, v: i128) -> Result<Yaml> {
-        match self.format {
-            None => Ok(Yaml::Real(v.to_string())),
-            Some(Format::Binary) => Ok(Yaml::Real(format!("{:#0130}", v))),
-            Some(Format::Decimal) => Ok(Yaml::Real(v.to_string())),
-            Some(Format::Hex) => Ok(Yaml::Real(format!("{:#034x}", v))),
-            Some(Format::Octal) => Ok(Yaml::Real(format!("{:#045o}", v))),
-            _ => Err(error::format(format!(
-                "Format {:?} not supported for type i128",
-                self.format
-            ))),
-        }
+        let y = Yaml::Meta(Meta::Int128(v));
+        self.serialize_integer(y, 'i', std::mem::size_of_val(&v) * 8)
     }
 
     fn serialize_u8(self, v: u8) -> Result<Yaml> {
-        match self.format {
-            None => Ok(Yaml::Integer(v as i64)),
-            Some(Format::Binary) => Ok(Yaml::Real(format!("{:#010b}", v))),
-            Some(Format::Decimal) => Ok(Yaml::Integer(v as i64)),
-            Some(Format::Hex) => Ok(Yaml::Real(format!("{:#04x}", v))),
-            Some(Format::Octal) => Ok(Yaml::Real(format!("{:#05o}", v))),
-            _ => Err(error::format(format!(
-                "Format {:?} not supported for type u8",
-                self.format
-            ))),
-        }
+        let y = Yaml::Integer(v as i64);
+        self.serialize_integer(y, 'u', std::mem::size_of_val(&v) * 8)
     }
 
     fn serialize_u16(self, v: u16) -> Result<Yaml> {
-        match self.format {
-            None => Ok(Yaml::Integer(v as i64)),
-            Some(Format::Binary) => Ok(Yaml::Real(format!("{:#018b}", v))),
-            Some(Format::Decimal) => Ok(Yaml::Integer(v as i64)),
-            Some(Format::Hex) => Ok(Yaml::Real(format!("{:#06x}", v))),
-            Some(Format::Octal) => Ok(Yaml::Real(format!("{:#08o}", v))),
-            _ => Err(error::format(format!(
-                "Format {:?} not supported for type u16",
-                self.format
-            ))),
-        }
+        let y = Yaml::Integer(v as i64);
+        self.serialize_integer(y, 'u', std::mem::size_of_val(&v) * 8)
     }
 
     fn serialize_u32(self, v: u32) -> Result<Yaml> {
-        match self.format {
-            None => Ok(Yaml::Integer(v as i64)),
-            Some(Format::Binary) => Ok(Yaml::Real(format!("{:#034b}", v))),
-            Some(Format::Decimal) => Ok(Yaml::Integer(v as i64)),
-            Some(Format::Hex) => Ok(Yaml::Real(format!("{:#010x}", v))),
-            Some(Format::Octal) => Ok(Yaml::Real(format!("{:#013o}", v))),
-            _ => Err(error::format(format!(
-                "Format {:?} not supported for type u32",
-                self.format
-            ))),
-        }
+        let y = Yaml::Integer(v as i64);
+        self.serialize_integer(y, 'u', std::mem::size_of_val(&v) * 8)
     }
 
     fn serialize_u64(self, v: u64) -> Result<Yaml> {
-        match self.format {
-            None => Ok(Yaml::Real(v.to_string())),
-            Some(Format::Binary) => Ok(Yaml::Real(format!("{:#066b}", v))),
-            Some(Format::Decimal) => Ok(Yaml::Real(v.to_string())),
-            Some(Format::Hex) => Ok(Yaml::Real(format!("{:#018x}", v))),
-            Some(Format::Octal) => Ok(Yaml::Real(format!("{:#024o}", v))),
-            _ => Err(error::format(format!(
-                "Format {:?} not supported for type u64",
-                self.format
-            ))),
-        }
+        let y = Yaml::Integer(v as i64);
+        self.serialize_integer(y, 'u', std::mem::size_of_val(&v) * 8)
     }
 
     fn serialize_u128(self, v: u128) -> Result<Yaml> {
-        match self.format {
-            None => Ok(Yaml::Real(v.to_string())),
-            Some(Format::Binary) => Ok(Yaml::Real(format!("{:#0130}", v))),
-            Some(Format::Decimal) => Ok(Yaml::Real(v.to_string())),
-            Some(Format::Hex) => Ok(Yaml::Real(format!("{:#034x}", v))),
-            Some(Format::Octal) => Ok(Yaml::Real(format!("{:#045o}", v))),
-            _ => Err(error::format(format!(
-                "Format {:?} not supported for type u128",
-                self.format
-            ))),
-        }
+        // Ugh, deal with u128.
+        let y = Yaml::Meta(Meta::Int128(v as i128));
+        self.serialize_integer(y, 'u', std::mem::size_of_val(&v) * 8)
     }
 
     fn serialize_f32(self, v: f32) -> Result<Yaml> {
@@ -730,9 +665,10 @@ impl<'f> ser::Serializer for SerializerToYaml<'f> {
     }
 
     fn serialize_str(self, value: &str) -> Result<Yaml> {
+        let y = Yaml::String(value.to_owned());
         match self.format {
-            None => Ok(Yaml::String(value.to_owned())),
-            Some(Format::Block) => Ok(Yaml::BlockScalar(value.to_owned())),
+            None => Ok(y),
+            Some(Format::Block) => Ok(Yaml::Meta(Meta::String(StringFormat::Block, y.into()))),
             _ => Err(error::format(format!(
                 "Format {:?} not supported for type str",
                 self.format
@@ -1183,6 +1119,17 @@ where
     }
 }
 
+fn comment_nodes(comment: &str) -> Vec<Yaml> {
+    comment
+        .split('\n')
+        .map(|c| {
+            let mut s = String::from(" ");
+            s.push_str(c);
+            Yaml::Comment(s, false)
+        })
+        .collect()
+}
+
 fn to_yaml<T>(elem: &T, format: Option<Format>, comment: Option<String>) -> Result<Yaml>
 where
     T: ser::Serialize + ?Sized,
@@ -1190,10 +1137,9 @@ where
     let yf = YamlFormatType::get(elem);
     let yaml = elem.serialize(SerializerToYaml::new(yf, format))?;
     if let Some(c) = comment {
-        Ok(Yaml::DocFragment(
-            vec![Yaml::Comment(c), yaml],
-            yaml::FragStyle::None,
-        ))
+        let mut comments = comment_nodes(&c);
+        comments.push(yaml);
+        Ok(Yaml::Meta(Meta::Fragment(comments)))
     } else {
         Ok(yaml)
     }
@@ -1204,18 +1150,21 @@ fn singleton_hash(k: Yaml, v: Yaml, format: Option<Format>, comment: Option<Stri
     hash.insert(k, v);
     let yaml = Yaml::Hash(hash);
 
+    let comment = comment.map(|c| comment_nodes(&c));
     match (format, comment) {
-        (None, Some(c)) => Yaml::DocFragment(vec![Yaml::Comment(c), yaml], yaml::FragStyle::None),
-        (Some(f), None) if f == Format::Oneline => {
-            Yaml::DocFragment(vec![yaml], yaml::FragStyle::Oneline)
+        (None, Some(mut c)) => {
+            c.push(yaml);
+            Yaml::Meta(Meta::Fragment(c))
         }
-        (Some(f), Some(c)) if f == Format::Oneline => Yaml::DocFragment(
-            vec![
-                Yaml::Comment(c),
-                Yaml::DocFragment(vec![yaml], yaml::FragStyle::Oneline),
-            ],
-            yaml::FragStyle::Indented,
-        ),
+        (Some(f), None) if f == Format::Oneline => {
+            // TODO: implement oneline mode
+            yaml
+        }
+        (Some(f), Some(mut c)) if f == Format::Oneline => {
+            // TODO: implement oneline mode
+            c.push(yaml);
+            Yaml::Meta(Meta::Fragment(c))
+        }
         (_, _) => yaml,
     }
 }

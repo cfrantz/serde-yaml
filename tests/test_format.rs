@@ -91,7 +91,8 @@ fn test_gettysburg() -> Result<()> {
         prelude: r#"Four score and seven years ago our fathers brought forth, upon this
 continent, a new nation, conceived in Liberty, and dedicated to the
 proposition that all men are created equal.
-"#.to_string(),
+"#
+        .to_string(),
         _prelude: "Hay copy".to_string(),
 
         // Note: trailing newline should cause a "|+" block.
@@ -100,7 +101,8 @@ or any nation so conceived, and so dedicated, can long endure. We are met
 on a great battle field of that war. We come to dedicate a portion of it,
 as a final resting place for those who died here, that the nation might
 live. This we may, in all propriety do.
-"#.to_string(),
+"#
+        .to_string(),
         _middle: "Nicolay Copy".to_string(),
 
         // Note: NO trailing newline should cause a "|-" block.
@@ -116,7 +118,8 @@ honored dead we take increased devotion to that cause for which they gave
 the last full measure of devotion -- that we here highly resolve that
 these dead shall not have died in vain -- that this nation, under God,
 shall have a new birth of freedom -- and that government of the people,
-by the people, for the people, shall not perish from the earth."#.to_string(),
+by the people, for the people, shall not perish from the earth."#
+            .to_string(),
         _end: "Bliss Copy".to_string(),
 
         author: "Abraham Lincoln".to_string(),
@@ -166,8 +169,7 @@ impl SfdpHeader {
     }
 }
 
-
-const SFDP: &str  = r#"---
+const SFDP: &str = r#"---
 header:
   # Signature value='SFDP' (should be 'SFDP')
   signature: 0x50444653
@@ -221,6 +223,10 @@ fn test_intel_word() -> Result<()> {
     Ok(())
 }
 
+/*
+ * Not Yet
+ *
+
 #[derive(Serialize, Deserialize, YamlFormat, Debug, PartialEq)]
 enum NesAddress {
     #[yaml(format=oneline, comment="NES file offset")]
@@ -240,10 +246,10 @@ struct Addresses {
 
 // Note: there is an extra space after the `a` and `b` key fields.
 const ADDRESSES: &str = r#"---
-a: 
+a:
   # NES file offset
   {"File": 16400}
-b: 
+b:
   # NES PRG bank:address
   {"Prg": [0x01, 0x8000]}
 c: {"Chr": [0x00, 0x1000]}
@@ -262,3 +268,4 @@ fn test_nes_address() -> Result<()> {
     assert_eq!(d, val);
     Ok(())
 }
+*/
